@@ -5,20 +5,18 @@ import org.example.model.config.Config;
 import org.example.model.matrix.SymbolCell;
 import org.example.play.RewardCalculator;
 import org.example.play.WinEvaluator;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author lakithaprabudh
  */
 public class RewardCalculatorTest {
+
     @Test
     public void testRewardCalculationWithWinAndBonus() throws Exception {
         Config config = ConfigLoader.loadConfig("config.json");
@@ -41,17 +39,11 @@ public class RewardCalculatorTest {
                 100
         );
 
-        assertTrue(result.getReward() > 0);
-        assertEquals("10x", result.getAppliedBonusSymbol());
+        MatrixPrinterUtil.printMatrix(matrix);
 
-        System.out.println("Test: Reward Calculation With Win And Bonus");
-        System.out.println("Matrix:");
-        for (SymbolCell[] row : matrix) {
-            for (SymbolCell cell : row) {
-                System.out.print(cell.getSymbol() + "\t");
-            }
-            System.out.println();
-        }
+        assertTrue(result.getReward() > 0, "Reward should be greater than zero");
+        assertEquals("10x", result.getAppliedBonusSymbol(), "Bonus symbol mismatch");
+
         System.out.println("Winning Map: " + winningMap);
         System.out.println("Applied Bonus: " + result.getAppliedBonusSymbol());
         System.out.println("Final Reward: " + result.getReward());
@@ -68,10 +60,8 @@ public class RewardCalculatorTest {
                 {new SymbolCell("+500", true), new SymbolCell("E", false), new SymbolCell("F", false), new SymbolCell("F", false)}
         };
 
-        // Evaluate wins
         Map<String, List<String>> winningMap = WinEvaluator.evaluate(matrix, config.getWinCombinations());
 
-        // Calculate reward
         RewardCalculator.RewardResult result = RewardCalculator.calculateReward(
                 matrix,
                 winningMap,
@@ -80,10 +70,13 @@ public class RewardCalculatorTest {
                 100
         );
 
-        assertTrue(result.getReward() > 0);
-        assertEquals("+500", result.getAppliedBonusSymbol());
+        MatrixPrinterUtil.printMatrix(matrix);
 
-        System.out.println("Reward: " + result.getReward());
-        System.out.println("Win map: " + winningMap);
+        assertTrue(result.getReward() > 0, "Reward should be greater than zero");
+        assertEquals("+500", result.getAppliedBonusSymbol(), "Bonus symbol mismatch");
+
+        System.out.println("Winning Map: " + winningMap);
+        System.out.println("Applied Bonus: " + result.getAppliedBonusSymbol());
+        System.out.println("Final Reward: " + result.getReward());
     }
 }

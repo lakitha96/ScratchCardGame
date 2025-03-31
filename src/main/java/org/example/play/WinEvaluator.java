@@ -12,24 +12,44 @@ import java.util.Map;
  * @author lakithaprabudh
  */
 public class WinEvaluator {
+
+    /**
+     * Evaluates the matrix for winning combinations based on the configuration.
+     *
+     * @param matrix the 2D matrix
+     * @param winCombinations the set of win combination rules
+     * @return result of winner data map with key as the symbol and the value as a list of win combination keys that apply
+     */
     public static Map<String, List<String>> evaluate(SymbolCell[][] matrix,
                                                      Map<String, WinningCombination> winCombinations) {
 
         Map<String, List<String>> result = new HashMap<>();
 
-        // STEP 1: Count all standard symbols (ignore bonus symbols)
+        Map<String, Integer> symbolCount = countStandardSymbols(matrix);
+        applySameSymbolWins(symbolCount, winCombinations, result);
+        applyLinearPatternWins(matrix, winCombinations, result);
+
+        return result;
+    }
+
+    // STEP 1: Count all standard symbols (ignore bonus symbols)
+    private static Map<String, Integer> countStandardSymbols(SymbolCell[][] matrix) {
         Map<String, Integer> symbolCount = new HashMap<>();
         for (SymbolCell[] row : matrix) {
             for (SymbolCell cell : row) {
                 if (!cell.isBonus()) {
-                    //count and update how many times each standard symbol appears
                     symbolCount.put(cell.getSymbol(),
                             symbolCount.getOrDefault(cell.getSymbol(), 0) + 1);
                 }
             }
         }
+        return symbolCount;
+    }
 
-        // STEP 2: Check 'same_symbols' combinations
+    // STEP 2: Apply 'same_symbols' winning combinations
+    private static void applySameSymbolWins(Map<String, Integer> symbolCount,
+                                            Map<String, WinningCombination> winCombinations,
+                                            Map<String, List<String>> result) {
         for (Map.Entry<String, WinningCombination> entry : winCombinations.entrySet()) {
             WinningCombination combo = entry.getValue();
             if ("same_symbols".equals(combo.getWhen())) {
@@ -42,52 +62,50 @@ public class WinEvaluator {
                 }
             }
         }
+    }
 
-        // STEP 3: Check linear pattern wins (row/col/diag) using coveredAreas
+    // STEP 3: Apply linear pattern wins (horizontal, vertical, diagonal)
+    private static void applyLinearPatternWins(SymbolCell[][] matrix,
+                                               Map<String, WinningCombination> winCombinations,
+                                               Map<String, List<String>> result) {
         for (Map.Entry<String, WinningCombination> entry : winCombinations.entrySet()) {
             WinningCombination combo = entry.getValue();
-            if ("linear_symbols".equals(combo.getWhen())) {
-                List<List<String>> areas = combo.getCoveredAreas();
 
-                for (List<String> area : areas) {
-                    String candidateSymbol = null;
-                    boolean matched = true;
+            if (!"linear_symbols".equals(combo.getWhen())) continue;
 
-                    for (String cellRef : area) {
-                        String[] parts = cellRef.split(":");
-                        int row = Integer.parseInt(parts[0]);
-                        int col = Integer.parseInt(parts[1]);
+            List<List<String>> areas = combo.getCoveredAreas();
+            for (List<String> area : areas) {
+                String candidateSymbol = null;
+                boolean matched = true;
 
-                        //if row is out of matrix skip
-                        if (row >= matrix.length || col >= matrix[0].length) {
-                            matched = false;
-                            break;
-                        }
+                for (String cellRef : area) {
+                    String[] parts = cellRef.split(":");
+                    int row = Integer.parseInt(parts[0]);
+                    int col = Integer.parseInt(parts[1]);
 
-                        SymbolCell cell = matrix[row][col];
-
-                        //if cell is bonus skip
-                        if (cell.isBonus()) {
-                            matched = false;
-                            break;
-                        }
-
-                        //all spot has same symbol decide as win
-                        if (candidateSymbol == null) {
-                            candidateSymbol = cell.getSymbol();
-                        } else if (!candidateSymbol.equals(cell.getSymbol())) {
-                            matched = false;
-                            break;
-                        }
+                    if (row >= matrix.length || col >= matrix[0].length) {
+                        matched = false;
+                        break;
                     }
 
-                    if (matched && candidateSymbol != null) {
-                        result.computeIfAbsent(candidateSymbol, k -> new ArrayList<>()).add(entry.getKey());
+                    SymbolCell cell = matrix[row][col];
+                    if (cell.isBonus()) {
+                        matched = false;
+                        break;
                     }
+
+                    if (candidateSymbol == null) {
+                        candidateSymbol = cell.getSymbol();
+                    } else if (!candidateSymbol.equals(cell.getSymbol())) {
+                        matched = false;
+                        break;
+                    }
+                }
+
+                if (matched && candidateSymbol != null) {
+                    result.computeIfAbsent(candidateSymbol, k -> new ArrayList<>()).add(entry.getKey());
                 }
             }
         }
-
-        return result;
     }
 }

@@ -7,6 +7,8 @@ import org.example.model.matrix.SymbolCell;
 import org.example.play.MatrixGenerator;
 import org.example.play.RewardCalculator;
 import org.example.play.WinEvaluator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -15,6 +17,8 @@ import java.util.*;
  */
 public class App {
 
+    private static final Logger log = LoggerFactory.getLogger(App.class);
+
     public static void main(String[] args) {
         try {
             Map<String, String> cliArgs = parseArguments(args);
@@ -22,7 +26,7 @@ public class App {
             int betAmount = Integer.parseInt(cliArgs.get("betting-amount"));
 
             if (configPath == null || betAmount <= 0) {
-                System.out.println("Usage: --config <file> --betting-amount <amount>");
+                log.error("Usage: --config <file> --betting-amount <amount>");
                 return;
             }
 
@@ -37,8 +41,7 @@ public class App {
             printResult(matrix, result, winningMap);
 
         } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-            e.printStackTrace();
+            log.error("An error occurred while running the game: {}", e.getMessage(), e);
         }
     }
 
@@ -58,12 +61,13 @@ public class App {
     }
 
     private static void printMatrix(SymbolCell[][] matrix) {
-        System.out.println("\nMatrix:");
+        log.info("Matrix:");
         for (SymbolCell[] row : matrix) {
+            StringBuilder sb = new StringBuilder();
             for (SymbolCell cell : row) {
-                System.out.print(cell.getSymbol() + "\t");
+                sb.append(String.format("%-8s", cell.getSymbol()));
             }
-            System.out.println();
+            log.info(sb.toString());
         }
     }
 
@@ -79,13 +83,13 @@ public class App {
         }
 
         Map<String, Object> finalOutput = new LinkedHashMap<>();
+        finalOutput.put("matrix", displayMatrix);
         finalOutput.put("reward", (int) result.getReward());
         finalOutput.put("applied_winning_combinations", winningMap);
         finalOutput.put("applied_bonus_symbol", result.getAppliedBonusSymbol());
 
         ObjectMapper mapper = new ObjectMapper();
         String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(finalOutput);
-        System.out.println("\nGame Result (JSON):");
-        System.out.println(json);
+        log.info("Game Result (JSON):\n{}", json);
     }
 }
